@@ -49,15 +49,17 @@ class MyService : Service() {
     }
 
     override fun onBind(p0: Intent?): IBinder? {
+        Log.d("MyService", "In onBind")
         return binder
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d("MyService", "Service started on Thread: ${Thread.currentThread().name}")
+
 
         isRandomNumberGeneratorOn = true
 
         serviceScope.launch {
+            Log.d("MyService", "Service started on Thread: ${Thread.currentThread().name}")
             generateRandomNumber()
         }
 

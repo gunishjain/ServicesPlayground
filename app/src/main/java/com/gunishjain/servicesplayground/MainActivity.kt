@@ -23,6 +23,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -32,21 +35,28 @@ import com.gunishjain.servicesplayground.ui.theme.ServicesPlaygroundTheme
 class MainActivity : ComponentActivity() {
     private var service: MyService? = null
     private var isBound = false
-    private var number: Int? = null
+    var number by mutableStateOf<String?>(null)
+        private set
     val connection = object : ServiceConnection {
 
         override fun onServiceConnected(p0: ComponentName?, binder: IBinder?) {
             service = (binder as MyService.MyServiceBinder).getService()
+            isBound = true
         }
 
         override fun onServiceDisconnected(p0: ComponentName?) {
-            isBound = true
+            isBound = false
         }
 
     }
 
-    private fun getRandomNumber() : Int? {
-        return service?.getRandomNumber()
+    private fun getRandomNumber()  {
+        if (isBound) {
+            val numberFromService = service?.getRandomNumber()
+            number = numberFromService?.toString() ?: "Service not ready"
+        } else {
+            number = "Service not bound"
+        }
     }
     private fun bindMyService(context: Context) {
         val serviceIntent = Intent(context, MyService::class.java)
@@ -57,6 +67,8 @@ class MainActivity : ComponentActivity() {
         if (isBound) {
             context.unbindService(connection)
             isBound = false
+            service = null
+            number = "Service unbound"
         }
     }
 
@@ -93,7 +105,7 @@ private fun stopMyService(context: Context){
 
 @Composable
 fun ServiceControlScreen(
-    number: Int?,
+    number: String?,
     getRandomNumber: () -> Unit,
     onStartService: () -> Unit,
     onStopService: () -> Unit,
@@ -109,7 +121,7 @@ fun ServiceControlScreen(
     ) {
 
         Text(
-            text = if(number!=null) "Number: $number" else "Service not bound",
+            text = if(number!=null) "Number: $number" else "",
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(bottom = 16.dp)
         )
