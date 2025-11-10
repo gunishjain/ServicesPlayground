@@ -1,8 +1,12 @@
 package com.gunishjain.servicesplayground
 
+import android.content.ComponentName
 import android.content.Context
+import android.content.Context.BIND_AUTO_CREATE
 import android.content.Intent
+import android.content.ServiceConnection
 import android.os.Bundle
+import android.os.IBinder
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -26,19 +30,55 @@ import androidx.compose.ui.unit.dp
 import com.gunishjain.servicesplayground.ui.theme.ServicesPlaygroundTheme
 
 class MainActivity : ComponentActivity() {
+    private var service: MyService? = null
+    private var isBound = false
+    private var number: Int? = null
+    val connection = object : ServiceConnection {
+
+        override fun onServiceConnected(p0: ComponentName?, binder: IBinder?) {
+            service = (binder as MyService.MyServiceBinder).getService()
+        }
+
+        override fun onServiceDisconnected(p0: ComponentName?) {
+            isBound = true
+        }
+
+    }
+
+    private fun getRandomNumber() : Int? {
+        return service?.getRandomNumber()
+    }
+    private fun bindMyService(context: Context) {
+        val serviceIntent = Intent(context, MyService::class.java)
+        context.bindService(serviceIntent, connection, BIND_AUTO_CREATE)
+    }
+
+    private fun unbindMyService(context: Context) {
+        if (isBound) {
+            context.unbindService(connection)
+            isBound = false
+        }
+    }
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             ServicesPlaygroundTheme {
                     ServiceControlScreen(
+                        getRandomNumber = { getRandomNumber() },
+                        number = number ,
                         onStartService = { startMyService(context = applicationContext) },
-                        onStopService = { stopMyService(context = applicationContext)}
+                        onStopService = { stopMyService(context = applicationContext)},
+                        bindService = { bindMyService(context = applicationContext) },
+                        unbindService = { unbindMyService(context = applicationContext)}
                     )
             }
         }
     }
 }
+
 
 
 private fun startMyService(context: Context) {
@@ -53,8 +93,12 @@ private fun stopMyService(context: Context){
 
 @Composable
 fun ServiceControlScreen(
+    number: Int?,
+    getRandomNumber: () -> Unit,
     onStartService: () -> Unit,
-    onStopService: () -> Unit
+    onStopService: () -> Unit,
+    bindService: () -> Unit,
+    unbindService: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -63,6 +107,12 @@ fun ServiceControlScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+
+        Text(
+            text = if(number!=null) "Number: $number" else "Service not bound",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
         Button(
             onClick = onStartService,
             modifier = Modifier.fillMaxWidth()
@@ -78,6 +128,34 @@ fun ServiceControlScreen(
         ) {
             Text(text = "Stop Service")
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = bindService,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(text = "Bind Service")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = unbindService,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(text = "Unbind Service")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = getRandomNumber ,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(text = "Get Random Number")
+        }
+
     }
 }
 
