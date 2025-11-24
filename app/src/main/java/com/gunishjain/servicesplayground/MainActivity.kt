@@ -22,6 +22,8 @@ import com.gunishjain.servicesplayground.jobintentservice.MyJIService
 import com.gunishjain.servicesplayground.ui.theme.ServicesPlaygroundTheme
 
 class MainActivity : ComponentActivity() {
+
+    var counter = 0
     private var service: MyService? = null
     private var myJIService: MyJIService  = MyJIService()
     private var isBound = false
@@ -90,7 +92,7 @@ class MainActivity : ComponentActivity() {
 
                     composable<JobIntentScreen> {
                         JobIntentServiceComposable(
-                            onStartService = { startJIService(myJIService,applicationContext)},
+                            onStartService = { startJIService(myJIService,applicationContext,++counter)},
                             onStopService = { stopJiService(applicationContext)},
                             onBack = { navController.popBackStack() }
                         )
@@ -102,8 +104,9 @@ class MainActivity : ComponentActivity() {
 }
 
 
-private fun startJIService(service: MyJIService, context: Context) {
+private fun startJIService(service: MyJIService, context: Context, counter: Int) {
     val JIServiceIntent: Intent? = Intent(context, MyJIService::class.java)
+    JIServiceIntent?.putExtra("starter","starter $counter")
     service.enqueueWork(context, JIServiceIntent!!)
 }
 
