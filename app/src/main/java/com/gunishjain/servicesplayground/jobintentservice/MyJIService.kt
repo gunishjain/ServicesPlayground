@@ -1,19 +1,20 @@
-package com.gunishjain.servicesplayground
+package com.gunishjain.servicesplayground.jobintentservice
 
-import android.app.Service
+import android.content.Context
 import android.content.Intent
-import android.os.Binder
-import android.os.IBinder
 import android.util.Log
+import androidx.core.app.JobIntentService
+import com.gunishjain.servicesplayground.MainActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
-class MyService : Service() {
+class MyJIService : JobIntentService() {
 
     private val serviceJob = Job()
     private val serviceScope = CoroutineScope(Dispatchers.Default + serviceJob)
+
     private var mRandomNumber: Int? = null
 
     private var isRandomNumberGeneratorOn: Boolean = false
@@ -21,14 +22,17 @@ class MyService : Service() {
     private val MIN = 0
     private val MAX = 100
 
+    fun enqueueWork(context: Context, work: Intent) {
+        enqueueWork(context, MyJIService::class.java, 1, work)
+    }
     private fun generateRandomNumber()  {
         while (isRandomNumberGeneratorOn){
             try {
                 Thread.sleep(1000)
                 mRandomNumber = MIN + (Math.random() * ((MAX - MIN) + 1)).toInt()
-                Log.d("MyService", "Random Number: $mRandomNumber")
+                Log.d("MyJIService", "Random Number: $mRandomNumber")
             } catch (e: InterruptedException) {
-                Log.i("MyService", "Thread Interrupted")
+                Log.i("MyJIService", "Thread Interrupted")
             }
         }
     }
@@ -37,39 +41,26 @@ class MyService : Service() {
         isRandomNumberGeneratorOn = false
     }
 
-     fun getRandomNumber() = mRandomNumber
-
-    private val binder = MyServiceBinder()
-
-    // using inner class since it can access members of its outer class and its instance including private ones
-    inner class MyServiceBinder: Binder() {
-
-        fun getService()  =  this@MyService
-
-    }
-
-    override fun onBind(p0: Intent?): IBinder? {
-        Log.d("MyService", "In onBind")
-        return binder
-    }
-
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    fun getRandomNumber() = mRandomNumber
 
 
+    override fun onHandleWork(intent: Intent) {
         isRandomNumberGeneratorOn = true
-
         serviceScope.launch {
-            Log.d("MyService", "Service started on Thread: ${Thread.currentThread().name}")
+            Log.d("MyJIService", "Service started on Thread: ${Thread.currentThread().name}")
             generateRandomNumber()
         }
+    }
 
-        return START_STICKY
+    override fun onStopCurrentWork(): Boolean {
+        Log.d("MyJIService", "onStopCurrentWork on Thread: ${Thread.currentThread().name}")
+        return super.onStopCurrentWork()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         stopRandomNumberGenerator()
-        serviceJob.cancel() // comment it out just to test for memory leaks
-        Log.d("MyService", "Service destroyed")
+        Log.d("MyJIService", "Service Stopped on Thread: ${Thread.currentThread().name}")
+
     }
 }

@@ -2,7 +2,6 @@ package com.gunishjain.servicesplayground
 
 import android.content.ComponentName
 import android.content.Context
-import android.content.Context.BIND_AUTO_CREATE
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Bundle
@@ -10,30 +9,21 @@ import android.os.IBinder
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.gunishjain.servicesplayground.boundservice.MyService
+import com.gunishjain.servicesplayground.boundservice.ServiceControlScreen
+import com.gunishjain.servicesplayground.jobintentservice.JobIntentServiceComposable
+import com.gunishjain.servicesplayground.jobintentservice.MyJIService
 import com.gunishjain.servicesplayground.ui.theme.ServicesPlaygroundTheme
 
 class MainActivity : ComponentActivity() {
     private var service: MyService? = null
+    private var myJIService: MyJIService  = MyJIService()
     private var isBound = false
     var number by mutableStateOf<String?>(null)
         private set
@@ -78,20 +68,50 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ServicesPlaygroundTheme {
-                    ServiceControlScreen(
-                        getRandomNumber = { getRandomNumber() },
-                        number = number ,
-                        onStartService = { startMyService(context = applicationContext) },
-                        onStopService = { stopMyService(context = applicationContext)},
-                        bindService = { bindMyService(context = applicationContext) },
-                        unbindService = { unbindMyService(context = applicationContext)}
-                    )
+                val navController = rememberNavController()
+
+                NavHost(
+                    navController = navController,
+                    startDestination = ServiceControl
+                ) {
+                    composable<ServiceControl> {
+                        ServiceControlScreen(
+                            number = number,
+                            getRandomNumber = { getRandomNumber() },
+                            onStartService = { startMyService(applicationContext) },
+                            onStopService = { stopMyService(applicationContext) },
+                            bindService = { bindMyService(applicationContext) },
+                            unbindService = { unbindMyService(applicationContext) },
+                            goToJobIntentService = {
+                                navController.navigate(JobIntentScreen)
+                            }
+                        )
+                    }
+
+                    composable<JobIntentScreen> {
+                        JobIntentServiceComposable(
+                            onStartService = { startJIService(myJIService,applicationContext)},
+                            onStopService = { stopJiService(applicationContext)},
+                            onBack = { navController.popBackStack() }
+                        )
+                    }
+                }
             }
         }
     }
 }
 
 
+private fun startJIService(service: MyJIService, context: Context) {
+    val JIServiceIntent: Intent? = Intent(context, MyJIService::class.java)
+    service.enqueueWork(context, JIServiceIntent!!)
+}
+
+
+private fun stopJiService(context: Context) {
+    val JIServiceIntent: Intent? = Intent(context, MyJIService::class.java)
+    context.stopService(JIServiceIntent)
+}
 
 private fun startMyService(context: Context) {
     val serviceIntent = Intent(context, MyService::class.java)
@@ -103,79 +123,5 @@ private fun stopMyService(context: Context){
 }
 
 
-@Composable
-fun ServiceControlScreen(
-    number: String?,
-    getRandomNumber: () -> Unit,
-    onStartService: () -> Unit,
-    onStopService: () -> Unit,
-    bindService: () -> Unit,
-    unbindService: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-
-        Text(
-            text = if(number!=null) "Number: $number" else "",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-        Button(
-            onClick = onStartService,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(text = "Start Service")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = onStopService,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(text = "Stop Service")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = bindService,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(text = "Bind Service")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = unbindService,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(text = "Unbind Service")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = getRandomNumber ,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(text = "Get Random Number")
-        }
-
-    }
-}
 
 
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    ServicesPlaygroundTheme {
-    }
-}
