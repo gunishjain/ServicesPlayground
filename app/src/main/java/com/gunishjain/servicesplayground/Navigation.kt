@@ -8,3 +8,6 @@ import kotlinx.serialization.Serializable
 
     @Serializable
     data object JobIntentScreen
+
+@Serializable
+data object JobSchedulerScreen

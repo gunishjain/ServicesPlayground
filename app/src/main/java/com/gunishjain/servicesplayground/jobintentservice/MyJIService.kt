@@ -4,16 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.core.app.JobIntentService
-import com.gunishjain.servicesplayground.MainActivity
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 
 class MyJIService : JobIntentService() {
-
-    private val serviceJob = Job()
-    private val serviceScope = CoroutineScope(Dispatchers.Default + serviceJob)
 
     private var mRandomNumber: Int? = null
 

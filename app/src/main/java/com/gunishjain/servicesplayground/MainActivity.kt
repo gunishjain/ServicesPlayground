@@ -1,17 +1,23 @@
 package com.gunishjain.servicesplayground
 
+import android.app.job.JobInfo
+import android.app.job.JobScheduler
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -19,6 +25,8 @@ import com.gunishjain.servicesplayground.boundservice.MyService
 import com.gunishjain.servicesplayground.boundservice.ServiceControlScreen
 import com.gunishjain.servicesplayground.jobintentservice.JobIntentServiceComposable
 import com.gunishjain.servicesplayground.jobintentservice.MyJIService
+import com.gunishjain.servicesplayground.jobservice.JobSchedulerComposable
+import com.gunishjain.servicesplayground.jobservice.JobServiceDemo
 import com.gunishjain.servicesplayground.ui.theme.ServicesPlaygroundTheme
 
 class MainActivity : ComponentActivity() {
@@ -26,6 +34,8 @@ class MainActivity : ComponentActivity() {
     var counter = 0
     private var service: MyService? = null
     private var myJIService: MyJIService  = MyJIService()
+
+    private var jobScheduler: JobScheduler? = null
     private var isBound = false
     var number by mutableStateOf<String?>(null)
         private set
@@ -65,12 +75,15 @@ class MainActivity : ComponentActivity() {
     }
 
 
+    @RequiresApi(Build.VERSION_CODES.P)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             ServicesPlaygroundTheme {
                 val navController = rememberNavController()
+
+                jobScheduler = getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
 
                 NavHost(
                     navController = navController,
@@ -86,6 +99,9 @@ class MainActivity : ComponentActivity() {
                             unbindService = { unbindMyService(applicationContext) },
                             goToJobIntentService = {
                                 navController.navigate(JobIntentScreen)
+                            },
+                            goToJobScheduler = {
+                                navController.navigate(JobSchedulerScreen)
                             }
                         )
                     }
@@ -97,10 +113,44 @@ class MainActivity : ComponentActivity() {
                             onBack = { navController.popBackStack() }
                         )
                     }
+
+                    composable<JobSchedulerScreen> {
+                        JobSchedulerComposable(
+                            onStartService = { startJob(applicationContext, jobScheduler!! )},
+                            onStopService = { stopJob(jobScheduler!!)},
+                            onBack = { navController.popBackStack() }
+                        )
+                    }
                 }
             }
         }
     }
+}
+
+
+@RequiresApi(Build.VERSION_CODES.P)
+private fun startJob(context: Context, scheduler: JobScheduler) {
+
+    val componentName = ComponentName(context, JobServiceDemo::class.java)
+
+    val jobInfo : JobInfo = JobInfo.Builder(101, componentName)
+        .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+        .setPeriodic(15*60*1000)
+        .setRequiresCharging(false)
+        .setPersisted(true)
+        .build()
+
+    if(scheduler.schedule(jobInfo) == JobScheduler.RESULT_SUCCESS) {
+        Log.i("JobScheduler", "Job scheduled successfully")
+    } else {
+        Log.i("JobScheduler", "Job scheduling failed")
+    }
+
+}
+
+private fun stopJob(scheduler: JobScheduler) {
+    scheduler.cancel(101)
+    Log.i("JobScheduler", "Job cancelled")
 }
 
 

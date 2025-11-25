@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 
     <application
         android:allowBackup="true"
@@ -26,8 +28,8 @@
         </activity>
 
         <service android:name=".boundservice.MyService"/>
-
         <service android:name=".jobintentservice.MyJIService" android:permission="android.permission.BIND_JOB_SERVICE"/>
+        <service android:name=".jobservice.JobServiceDemo" android:permission="android.permission.BIND_JOB_SERVICE"/>
 
     </application>
 
