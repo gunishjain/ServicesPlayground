@@ -14,3 +14,6 @@ data object JobSchedulerScreen
 
 @Serializable
 data object ForegroundServiceScreen
+
+@Serializable
+data object WorkManagerScreen

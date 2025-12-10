@@ -23,6 +23,10 @@ import androidx.core.content.ContextCompat.getSystemService
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.work.PeriodicWorkRequest
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.WorkRequest
 import com.gunishjain.servicesplayground.boundservice.MyService
 import com.gunishjain.servicesplayground.boundservice.ServiceControlScreen
 import com.gunishjain.servicesplayground.foregroundService.ForegroundService
@@ -32,6 +36,8 @@ import com.gunishjain.servicesplayground.jobintentservice.MyJIService
 import com.gunishjain.servicesplayground.jobservice.JobSchedulerComposable
 import com.gunishjain.servicesplayground.jobservice.JobServiceDemo
 import com.gunishjain.servicesplayground.ui.theme.ServicesPlaygroundTheme
+import com.gunishjain.servicesplayground.workmanagerdemo.RandomNumberGeneratorWorker
+import com.gunishjain.servicesplayground.workmanagerdemo.WorkManagerComposable
 import java.util.jar.Manifest
 
 class MainActivity : ComponentActivity() {
@@ -42,6 +48,10 @@ class MainActivity : ComponentActivity() {
 
     private var jobScheduler: JobScheduler? = null
     private var isBound = false
+
+    private lateinit var workManager: WorkManager
+    private lateinit var workRequest: WorkRequest
+
     var number by mutableStateOf<String?>(null)
         private set
     val connection = object : ServiceConnection {
@@ -97,6 +107,13 @@ class MainActivity : ComponentActivity() {
 
                 jobScheduler = getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
 
+                workManager = WorkManager.getInstance(this)
+                workRequest = PeriodicWorkRequest.Builder(
+                    RandomNumberGeneratorWorker::class.java,
+                    15,
+                    java.util.concurrent.TimeUnit.MINUTES
+                ).build()
+
                 NavHost(
                     navController = navController,
                     startDestination = ServiceControl
@@ -117,7 +134,9 @@ class MainActivity : ComponentActivity() {
                             },
                             goToForegroundService = {
                                 navController.navigate(ForegroundServiceScreen)
-
+                            },
+                            goToWorkManager = {
+                                navController.navigate(WorkManagerScreen)
                             }
                         )
                     }
@@ -145,10 +164,26 @@ class MainActivity : ComponentActivity() {
                             onBack = { navController.popBackStack() }
                         )
                     }
+
+                    composable<WorkManagerScreen> {
+                        WorkManagerComposable(
+                            onStartWorker = { startWorker(workManager,workRequest)},
+                            onStopWorker = { stopWorker(workManager,workRequest)},
+                            onBack = { navController.popBackStack() }
+                        )
+                    }
                 }
             }
         }
     }
+}
+
+private fun startWorker(workManager: WorkManager,workRequest: WorkRequest){
+    workManager.enqueue(workRequest)
+}
+
+private fun stopWorker(workManager: WorkManager,workRequest: WorkRequest){
+    workManager.cancelWorkById(workRequest.id)
 }
 
 

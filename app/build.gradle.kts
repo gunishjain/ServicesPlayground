@@ -60,5 +60,13 @@ dependencies {
 
     implementation("androidx.navigation:navigation-compose:2.9.5")
 
+    val work_version = "2.11.0"
+
+    // (Java only)
+    implementation("androidx.work:work-runtime:$work_version")
+
+    // Kotlin + coroutines
+    implementation("androidx.work:work-runtime-ktx:$work_version")
+
 
 }
