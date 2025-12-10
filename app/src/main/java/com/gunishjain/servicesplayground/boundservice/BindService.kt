@@ -24,7 +24,8 @@ fun ServiceControlScreen(
     bindService: () -> Unit,
     unbindService: () -> Unit,
     goToJobIntentService: () -> Unit,
-    goToJobScheduler: () -> Unit
+    goToJobScheduler: () -> Unit,
+    goToForegroundService: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -92,6 +93,13 @@ fun ServiceControlScreen(
             Text(text = "Goto JobScheduler")
         }
 
+        Button(
+            onClick = goToForegroundService ,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(text = "Goto Foreground Service")
+        }
+
     }
 }
 
@@ -107,7 +115,8 @@ fun BindServicePreview() {
             bindService = {},
             unbindService = {},
             goToJobIntentService = {},
-            goToJobScheduler = {}
+            goToJobScheduler = {},
+            goToForegroundService = {}
         )
     }
 }

@@ -17,17 +17,22 @@ import androidx.annotation.RequiresApi
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.getSystemService
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.gunishjain.servicesplayground.boundservice.MyService
 import com.gunishjain.servicesplayground.boundservice.ServiceControlScreen
+import com.gunishjain.servicesplayground.foregroundService.ForegroundService
+import com.gunishjain.servicesplayground.foregroundService.ForegroundServiceComposable
 import com.gunishjain.servicesplayground.jobintentservice.JobIntentServiceComposable
 import com.gunishjain.servicesplayground.jobintentservice.MyJIService
 import com.gunishjain.servicesplayground.jobservice.JobSchedulerComposable
 import com.gunishjain.servicesplayground.jobservice.JobServiceDemo
 import com.gunishjain.servicesplayground.ui.theme.ServicesPlaygroundTheme
+import java.util.jar.Manifest
 
 class MainActivity : ComponentActivity() {
 
@@ -78,6 +83,13 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.P)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+            101
+        )
+
         enableEdgeToEdge()
         setContent {
             ServicesPlaygroundTheme {
@@ -102,6 +114,10 @@ class MainActivity : ComponentActivity() {
                             },
                             goToJobScheduler = {
                                 navController.navigate(JobSchedulerScreen)
+                            },
+                            goToForegroundService = {
+                                navController.navigate(ForegroundServiceScreen)
+
                             }
                         )
                     }
@@ -121,10 +137,29 @@ class MainActivity : ComponentActivity() {
                             onBack = { navController.popBackStack() }
                         )
                     }
+
+                    composable<ForegroundServiceScreen> {
+                        ForegroundServiceComposable(
+                            onStartService = { startForeGroundService(applicationContext)},
+                            onStopService = { stopForegroundService(applicationContext)},
+                            onBack = { navController.popBackStack() }
+                        )
+                    }
                 }
             }
         }
     }
+}
+
+
+private fun startForeGroundService(context: Context) {
+    val serviceIntent = Intent(context, ForegroundService::class.java)
+    ContextCompat.startForegroundService(context, serviceIntent)
+}
+
+private fun stopForegroundService(context: Context) {
+    val serviceIntent: Intent? = Intent(context, ForegroundService::class.java)
+    context.stopService(serviceIntent)
 }
 
 

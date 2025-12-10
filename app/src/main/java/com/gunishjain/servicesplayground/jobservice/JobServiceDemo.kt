@@ -54,6 +54,7 @@ class JobServiceDemo: JobService() {
     }
 
 
+    @RequiresApi(Build.VERSION_CODES.S)
     override fun onStartJob(p0: JobParameters?): Boolean {
         Log.d("MyJobService", "onStartJob")
         jobParameters = p0

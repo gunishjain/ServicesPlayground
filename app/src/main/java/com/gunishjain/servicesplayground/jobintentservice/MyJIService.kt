@@ -40,7 +40,7 @@ class MyJIService : JobIntentService() {
 
 
     override fun onHandleWork(intent: Intent) {
-        isRandomNumberGeneratorOn = true
+            isRandomNumberGeneratorOn = true
 
             Log.d("MyJIService", "Service started on Thread: ${Thread.currentThread().name}")
             generateRandomNumber(intent.getStringExtra("starter"))
